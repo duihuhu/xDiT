@@ -14,7 +14,7 @@ except ImportError:
 
 import time
 import os
-os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
