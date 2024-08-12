@@ -13,7 +13,7 @@ except ImportError:
     print("yunchang not found")
 
 import time
-
+import os
 os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 def main():
     parser = argparse.ArgumentParser()
