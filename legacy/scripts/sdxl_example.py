@@ -10,7 +10,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--model_id",
-        default="stabilityai/stable-diffusion-xl-base-1.0",
+#        default="stabilityai/stable-diffusion-xl-base-1.0",
+        default="/home/jovyan/models/stable-diffusion-xl-base-1.0/models/snapshots/462165984030d82259a11f4367a4eed129e94a7b",
         type=str,
         help="Path or Id to the pretrained model.",
     )
