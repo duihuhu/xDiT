@@ -19,7 +19,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--model_id",
-        default="/home/jovyan/models/DiT-XL-2-256/models/snapshots/eab87f77abd5aef071a632f08807fbaab0b704d0/transformer",
+        default="facebook/DiT-XL-2-256",
         type=str,
         help="Path to the pretrained model.",
     )
