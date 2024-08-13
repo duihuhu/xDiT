@@ -331,8 +331,6 @@ class PixArtAlphaPipeline(DiffusionPipeline):
                 If `True`, the function will preprocess and clean the provided caption before encoding.
             max_sequence_length (`int`, defaults to 120): Maximum sequence length to use for the prompt.
         """
-        logger.warning("encode_prompt")
-
         if "mask_feature" in kwargs:
             deprecation_message = "The use of `mask_feature` is deprecated. It is no longer used in any computation and that doesn't affect the end results. It will be removed in a future version."
             deprecate("mask_feature", "1.0.0", deprecation_message, standard_warn=False)
@@ -463,7 +461,6 @@ class PixArtAlphaPipeline(DiffusionPipeline):
         prompt_attention_mask=None,
         negative_prompt_attention_mask=None,
     ):
-        logger.warning("check_inputs")
         if height % 8 != 0 or width % 8 != 0:
             raise ValueError(f"`height` and `width` have to be divisible by 8 but are {height} and {width}.")
 
