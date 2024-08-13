@@ -23,6 +23,10 @@ from xfuser.distributed import (
 from xfuser.model_executor.pipelines import xFuserPipelineBaseWrapper
 from .register import xFuserPipelineWrapperRegister
 
+
+from xfuser.logger import init_logger
+logger = init_logger(__name__)
+
 import time
 
 @xFuserPipelineWrapperRegister.register(PixArtAlphaPipeline)
@@ -155,7 +159,7 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
         if "mask_feature" in kwargs:
             deprecation_message = "The use of `mask_feature` is deprecated. It is no longer used in any computation and that doesn't affect the end results. It will be removed in a future version."
             deprecate("mask_feature", "1.0.0", deprecation_message, standard_warn=False)
-        print("aaaaaaaa\n")
+        logger.warning("aaaaaaaa")
         # 1. Check inputs. Raise error if not correct
         height = height or self.transformer.config.sample_size * self.vae_scale_factor
         width = width or self.transformer.config.sample_size * self.vae_scale_factor
