@@ -142,7 +142,6 @@ class xFuserPipelineBaseWrapper(xFuserBaseWrapper, metaclass=ABCMeta):
             num_inference_steps=steps,
             output_type="latent",
             generator=torch.Generator(device="cuda").manual_seed(42),
-            a=10
         )
         get_runtime_state().runtime_config.warmup_steps = warmup_steps
 

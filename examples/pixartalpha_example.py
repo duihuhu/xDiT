@@ -35,6 +35,7 @@ def main():
         output_type=input_config.output_type,
         use_resolution_binning=input_config.use_resolution_binning,
         generator=torch.Generator(device="cuda").manual_seed(input_config.seed),
+        cc = 10
     )
     end_time = time.time()
     elapsed_time = end_time - start_time
