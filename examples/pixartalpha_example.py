@@ -29,6 +29,7 @@ def main():
     torch.cuda.reset_peak_memory_stats()
     start_time = time.time()
     output = pipe(
+        a=10,
         height=input_config.height,
         width=input_config.height,
         prompt=input_config.prompt,
