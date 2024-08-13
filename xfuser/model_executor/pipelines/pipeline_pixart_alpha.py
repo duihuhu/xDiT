@@ -350,6 +350,7 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
                 )
 #! ---------------------------------------- MODIFIED ABOVE ----------------------------------------
         t3 = time.time()
+        print("pixart alpha execute time ", t3-t2, t2-t1)
 
         # 8. Decode latents (only rank 0)
 #! ---------------------------------------- ADD BELOW ----------------------------------------
@@ -370,8 +371,6 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
 
             if not return_dict:
                 return (image,)
-            t4 = time.time()
-            print("pixart alpha execute time ", t4-t3, t3-t2, t2-t1)
             return ImagePipelineOutput(images=image)
 #! ---------------------------------------- ADD BELOW ----------------------------------------
         else:
