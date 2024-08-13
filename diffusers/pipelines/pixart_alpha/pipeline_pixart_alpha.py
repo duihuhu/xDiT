@@ -330,6 +330,7 @@ class PixArtAlphaPipeline(DiffusionPipeline):
                 If `True`, the function will preprocess and clean the provided caption before encoding.
             max_sequence_length (`int`, defaults to 120): Maximum sequence length to use for the prompt.
         """
+        logger.warning("aaaaaaaa")
 
         if "mask_feature" in kwargs:
             deprecation_message = "The use of `mask_feature` is deprecated. It is no longer used in any computation and that doesn't affect the end results. It will be removed in a future version."
