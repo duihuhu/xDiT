@@ -23,14 +23,10 @@ def main():
         engine_config=engine_config,
         torch_dtype=torch.float16,
     ).to(f"cuda:{local_rank}")
-    t1 = time.time()
     pipe.prepare_run(input_config)
-    t2 = time.time()
     torch.cuda.reset_peak_memory_stats()
     start_time = time.time()
-    a=10
     output = pipe(
-        a,
         height=input_config.height,
         width=input_config.height,
         prompt=input_config.prompt,
@@ -39,7 +35,6 @@ def main():
         use_resolution_binning=input_config.use_resolution_binning,
         generator=torch.Generator(device="cuda").manual_seed(input_config.seed),
     )
-    print("ccccccc")
     end_time = time.time()
     elapsed_time = end_time - start_time
     peak_memory = torch.cuda.max_memory_allocated(device=f"cuda:{local_rank}")
