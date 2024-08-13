@@ -4,7 +4,7 @@ import clip
 def compute_text_embeddings(prompts):
     # 加载 CLIP 模型和预处理器
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, _ = clip.load("/home/jovyan/models/clip-ViT-B-32/models/snapshots/11fb331c2c388748c110926aa8013161cb5a85b5", device=device)
+    model, _ = clip.load("/home/jovyan/models/clip-ViT-B-32/models/snapshots/11fb331c2c388748c110926aa8013161cb5a85b5/", device=device)
 
     # 处理文本提示
     text_inputs = clip.tokenize(prompts).to(device)
