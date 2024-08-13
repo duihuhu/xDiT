@@ -24,7 +24,7 @@ def main():
         torch_dtype=torch.float16,
     ).to(f"cuda:{local_rank}")
     pipe.prepare_run(input_config)
-
+    print("aaaaaaaa")
     torch.cuda.reset_peak_memory_stats()
     start_time = time.time()
     output = pipe(
@@ -35,7 +35,6 @@ def main():
         output_type=input_config.output_type,
         use_resolution_binning=input_config.use_resolution_binning,
         generator=torch.Generator(device="cuda").manual_seed(input_config.seed),
-        cc = 10
     )
     end_time = time.time()
     elapsed_time = end_time - start_time

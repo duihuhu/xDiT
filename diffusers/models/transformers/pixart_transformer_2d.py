@@ -197,7 +197,6 @@ class PixArtTransformer2DModel(ModelMixin, ConfigMixin):
         encoder_attention_mask: Optional[torch.Tensor] = None,
         return_dict: bool = True,
     ):
-        print("fordward ")
         """
         The [`PixArtTransformer2DModel`] forward method.
 
