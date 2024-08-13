@@ -105,7 +105,7 @@ class PixArtTransformer2DModel(ModelMixin, ConfigMixin):
         attention_type: Optional[str] = "default",
     ):
         super().__init__()
-
+        print("init pioxart model ")
         # Validate inputs.
         if norm_type != "ada_norm_single":
             raise NotImplementedError(
