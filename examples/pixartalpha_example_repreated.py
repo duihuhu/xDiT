@@ -26,6 +26,15 @@ def main():
     ).to(f"cuda:{local_rank}")
     pipe.prepare_run(input_config)
     torch.cuda.reset_peak_memory_stats()
+    output = pipe(
+        height=input_config.height,
+        width=input_config.height,
+        prompt=input_config.prompt,
+        num_inference_steps=input_config.num_inference_steps,
+        output_type=input_config.output_type,
+        use_resolution_binning=input_config.use_resolution_binning,
+        generator=torch.Generator(device="cuda").manual_seed(input_config.seed),
+    )
     avg_time = 0
     for i in range(5):
         start_time = time.time()
@@ -43,7 +52,7 @@ def main():
         peak_memory = torch.cuda.max_memory_allocated(device=f"cuda:{local_rank}")
         avg_time = + elapsed_time
 
-    print("avg_time ", avg_time/4)
+    print("avg_time ", avg_time/5)
             
     parallel_info = (
         f"dp{engine_args.data_parallel_degree}_cfg{engine_config.parallel_config.cfg_degree}_"
