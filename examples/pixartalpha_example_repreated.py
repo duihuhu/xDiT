@@ -26,6 +26,7 @@ def main():
     ).to(f"cuda:{local_rank}")
     pipe.prepare_run(input_config)
     torch.cuda.reset_peak_memory_stats()
+    avg_time = 0
     for i in range(5):
         start_time = time.time()
         output = pipe(
@@ -40,10 +41,9 @@ def main():
         end_time = time.time()
         elapsed_time = end_time - start_time
         peak_memory = torch.cuda.max_memory_allocated(device=f"cuda:{local_rank}")
+        avg_time = + elapsed_time
 
-        print(
-            f"epoch time: {elapsed_time:.2f} sec, memory: {peak_memory/1e9} GB"
-        )
+    print("avg_time ", avg_time/4)
             
     parallel_info = (
         f"dp{engine_args.data_parallel_degree}_cfg{engine_config.parallel_config.cfg_degree}_"
@@ -63,10 +63,7 @@ def main():
                 image_rank = dp_group_index * dp_batch_size + i
                 image.save(f"./results/pixart_alpha_result_{parallel_info}_{image_rank}_{i}.png")
 
-    if get_world_group().rank == get_world_group().world_size - 1:
-        print(
-            f"epoch time: {elapsed_time:.2f} sec, memory: {peak_memory/1e9} GB"
-        )
+
     get_runtime_state().destory_distributed_env()
 
 
