@@ -133,7 +133,6 @@ class xFuserPipelineBaseWrapper(xFuserBaseWrapper, metaclass=ABCMeta):
         )
         warmup_steps = get_runtime_state().runtime_config.warmup_steps
         get_runtime_state().runtime_config.warmup_steps = sync_steps
-        print("prepare_run prepare_run")
         self.__call__(
             height=input_config.height,
             width=input_config.width,
