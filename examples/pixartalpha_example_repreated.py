@@ -53,7 +53,8 @@ def main():
         sum_time = sum_time + elapsed_time
 
     print("avg_time ", sum_time/5)
-            
+    print("avg step time ", sum_time/(5*input_config.num_inference_steps))
+       
     parallel_info = (
         f"dp{engine_args.data_parallel_degree}_cfg{engine_config.parallel_config.cfg_degree}_"
         f"ulysses{engine_args.ulysses_degree}_ring{engine_args.ring_degree}_"
