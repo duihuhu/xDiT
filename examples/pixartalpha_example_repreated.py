@@ -35,7 +35,7 @@ def main():
         use_resolution_binning=input_config.use_resolution_binning,
         generator=torch.Generator(device="cuda").manual_seed(input_config.seed),
     )
-    avg_time = 0
+    sum_time = 0
     for i in range(5):
         start_time = time.time()
         output = pipe(
@@ -47,12 +47,12 @@ def main():
             use_resolution_binning=input_config.use_resolution_binning,
             generator=torch.Generator(device="cuda").manual_seed(input_config.seed),
         )
+        torch.cuda.synchronize() 
         end_time = time.time()
         elapsed_time = end_time - start_time
-        peak_memory = torch.cuda.max_memory_allocated(device=f"cuda:{local_rank}")
-        avg_time = + elapsed_time
+        sum_time = sum_time + elapsed_time
 
-    print("avg_time ", avg_time/5)
+    print("avg_time ", sum_time/5)
             
     parallel_info = (
         f"dp{engine_args.data_parallel_degree}_cfg{engine_config.parallel_config.cfg_degree}_"
