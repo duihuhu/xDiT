@@ -41,29 +41,33 @@ def main():
         elapsed_time = end_time - start_time
         peak_memory = torch.cuda.max_memory_allocated(device=f"cuda:{local_rank}")
 
-        parallel_info = (
-            f"dp{engine_args.data_parallel_degree}_cfg{engine_config.parallel_config.cfg_degree}_"
-            f"ulysses{engine_args.ulysses_degree}_ring{engine_args.ring_degree}_"
-            f"pp{engine_args.pipefusion_parallel_degree}_patch{engine_args.num_pipeline_patch}"
+        print(
+            f"epoch time: {elapsed_time:.2f} sec, memory: {peak_memory/1e9} GB"
         )
-        if input_config.output_type == "pil":
-            global_rank = get_world_group().rank
-            dp_group_world_size = get_data_parallel_world_size()
-            dp_group_index = global_rank // dp_group_world_size
-            num_dp_groups = engine_config.parallel_config.dp_degree
-            dp_batch_size = (input_config.batch_size + num_dp_groups - 1) // num_dp_groups
-            if is_dp_last_rank():
-                if not os.path.exists('results'):
-                    os.mkdir('results')
-                for i, image in enumerate(output.images):
-                    image_rank = dp_group_index * dp_batch_size + i
-                    image.save(f"./results/pixart_alpha_result_{parallel_info}_{image_rank}_{i}.png")
+            
+    parallel_info = (
+        f"dp{engine_args.data_parallel_degree}_cfg{engine_config.parallel_config.cfg_degree}_"
+        f"ulysses{engine_args.ulysses_degree}_ring{engine_args.ring_degree}_"
+        f"pp{engine_args.pipefusion_parallel_degree}_patch{engine_args.num_pipeline_patch}"
+    )
+    if input_config.output_type == "pil":
+        global_rank = get_world_group().rank
+        dp_group_world_size = get_data_parallel_world_size()
+        dp_group_index = global_rank // dp_group_world_size
+        num_dp_groups = engine_config.parallel_config.dp_degree
+        dp_batch_size = (input_config.batch_size + num_dp_groups - 1) // num_dp_groups
+        if is_dp_last_rank():
+            if not os.path.exists('results'):
+                os.mkdir('results')
+            for i, image in enumerate(output.images):
+                image_rank = dp_group_index * dp_batch_size + i
+                image.save(f"./results/pixart_alpha_result_{parallel_info}_{image_rank}_{i}.png")
 
-        if get_world_group().rank == get_world_group().world_size - 1:
-            print(
-                f"epoch time: {elapsed_time:.2f} sec, memory: {peak_memory/1e9} GB"
-            )
-        get_runtime_state().destory_distributed_env()
+    if get_world_group().rank == get_world_group().world_size - 1:
+        print(
+            f"epoch time: {elapsed_time:.2f} sec, memory: {peak_memory/1e9} GB"
+        )
+    get_runtime_state().destory_distributed_env()
 
 
 if __name__ == '__main__':
