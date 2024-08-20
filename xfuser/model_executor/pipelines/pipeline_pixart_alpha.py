@@ -158,7 +158,6 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
         if "mask_feature" in kwargs:
             deprecation_message = "The use of `mask_feature` is deprecated. It is no longer used in any computation and that doesn't affect the end results. It will be removed in a future version."
             deprecate("mask_feature", "1.0.0", deprecation_message, standard_warn=False)
-        t1 = time.time()
         # 1. Check inputs. Raise error if not correct
         height = height or self.transformer.config.sample_size * self.vae_scale_factor
         width = width or self.transformer.config.sample_size * self.vae_scale_factor
@@ -302,7 +301,6 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
         num_warmup_steps = max(len(timesteps) - num_inference_steps * self.scheduler.order, 0)
 #! ---------------------------------------- MODIFIED BELOW ----------------------------------------
         num_pipeline_warmup_steps = get_runtime_state().runtime_config.warmup_steps
-        t2 = time.time()
 
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             if (
@@ -353,7 +351,6 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
                     sync_only=True,
                 )
         torch.cuda.synchronize() 
-        t3 = time.time()
 #! ---------------------------------------- MODIFIED ABOVE ----------------------------------------
         # 8. Decode latents (only rank 0)
 #! ---------------------------------------- ADD BELOW ----------------------------------------
@@ -368,8 +365,6 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
 
             if not output_type == "latent":
                 image = self.image_processor.postprocess(image, output_type=output_type)
-            t4 = time.time()
-            print("execute time ", t4-t3, t3-t2, t2-t1)
             # Offload all models
             self.maybe_free_model_hooks()
 

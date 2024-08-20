@@ -52,8 +52,7 @@ def main():
         elapsed_time = end_time - start_time
         sum_time = sum_time + elapsed_time
 
-    print("avg_time ", sum_time/5)
-    print("avg step time ", sum_time/(5*input_config.num_inference_steps))
+    print("avg_time, avg step time", sum_time/5, sum_time/(5*input_config.num_inference_steps))
        
     parallel_info = (
         f"dp{engine_args.data_parallel_degree}_cfg{engine_config.parallel_config.cfg_degree}_"
