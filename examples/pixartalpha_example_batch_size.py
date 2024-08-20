@@ -36,7 +36,7 @@ def main():
         generator=torch.Generator(device="cuda").manual_seed(input_config.seed),
     )
     sum_time = 0
-    for i in range(5):
+    for i in range(2):
         start_time = time.time()
         output = pipe(
             height=input_config.height,
@@ -52,7 +52,7 @@ def main():
         elapsed_time = end_time - start_time
         sum_time = sum_time + elapsed_time
 
-    print("avg_time ", sum_time/5)
+    print("avg_time ", sum_time/2)
 
     parallel_info = (
         f"dp{engine_args.data_parallel_degree}_cfg{engine_config.parallel_config.cfg_degree}_"
