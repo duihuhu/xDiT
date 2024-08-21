@@ -209,6 +209,16 @@ def main():
     )
 
     end_time = time.time()
+    start_time = time.time()
+    output = pipeline(
+        prompt=args.prompt,
+        generator=torch.Generator(device="cuda").manual_seed(42),
+        num_inference_steps=args.num_inference_steps,
+        output_type=args.output_type,
+    )
+
+    end_time = time.time()
+    print("pixart execute time ", end_time-start_time)
     # torch.cuda.memory._dump_snapshot(
     #     f"{distri_config.mode}_{distri_config.world_size}.pickle"
     # )
