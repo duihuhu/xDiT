@@ -31,6 +31,13 @@ if __name__ == "__main__":
         prompt="Astronaut in a jungle, cold color palette, muted colors, detailed, 8k",
         generator=torch.Generator(device="cuda").manual_seed(233),
     ).images[0]
-
+    import time
+    t1=time.time()
+    image = pipeline(
+        prompt="Astronaut in a jungle, cold color palette, muted colors, detailed, 8k",
+        generator=torch.Generator(device="cuda").manual_seed(233),
+    ).images[0]
+    t2=time.time()
+    print("sdxl execute time ", t2-t1)
     if distri_config.rank == 0:
         image.save("astronaut.png")
