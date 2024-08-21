@@ -77,10 +77,10 @@ def main():
         "--use_use_ulysses_low",
         action="store_true",
     )
-    parser.add_argument(
-        "--use_profiler",
-        action="store_true",
-    )
+    # parser.add_argument(
+    #     "--use_profiler",
+    #     action="store_true",
+    # )
     parser.add_argument(
         "--use_cuda_graph",
         action="store_true",
