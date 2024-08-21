@@ -15,9 +15,21 @@ if __name__ == "__main__":
         type=str,
         help="Path or Id to the pretrained model.",
     )
+    parser.add_argument(
+        "--height",
+        type=int,
+        default=1024,
+        help="The height of image",
+    )
+    parser.add_argument(
+        "--width",
+        type=int,
+        default=1024,
+        help="The width of image",
+    )
     args = parser.parse_args()
 
-    distri_config = DistriConfig(height=1024, width=1024, warmup_steps=1)
+    distri_config = DistriConfig(height=args.height, width=args.width, warmup_steps=1)
 
     pipeline = DistriSDXLPipeline.from_pretrained(
         distri_config=distri_config,
