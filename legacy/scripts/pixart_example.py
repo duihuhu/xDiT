@@ -146,7 +146,7 @@ def main():
         distri_config=distri_config,
         pretrained_model_name_or_path=args.model_id,
         enable_parallel_vae=enable_parallel_vae,
-        use_profiler=args.use_profiler,
+        # use_profiler=args.use_profiler,
     )
 
     rank = dist.get_rank()
@@ -173,46 +173,46 @@ def main():
     if args.use_split_batch:
         case_name += "_split_batch"
 
-    if args.use_profiler:
-        start_time = time.time()
-        with profile(
-            activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-            on_trace_ready=torch.profiler.tensorboard_trace_handler(
-                f"./profile/{case_name}"
-            ),
-            profile_memory=True,
-            with_stack=True,
-            record_shapes=True,
-        ) as prof:
-            output = pipeline(
-                prompt=args.prompt,
-                generator=torch.Generator(device="cuda").manual_seed(42),
-                num_inference_steps=args.num_inference_steps,
-                output_type=args.output_type,
-            )
-        # if distri_config.rank == 0:
-        #     prof.export_memory_timeline(
-        #         f"{distri_config.mode}_{args.height}_{distri_config.world_size}_mem.html"
-        #     )
-        end_time = time.time()
-    else:
+    # if args.use_profiler:
+    #     start_time = time.time()
+    #     with profile(
+    #         activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+    #         on_trace_ready=torch.profiler.tensorboard_trace_handler(
+    #             f"./profile/{case_name}"
+    #         ),
+    #         profile_memory=True,
+    #         with_stack=True,
+    #         record_shapes=True,
+    #     ) as prof:
+    #         output = pipeline(
+    #             prompt=args.prompt,
+    #             generator=torch.Generator(device="cuda").manual_seed(42),
+    #             num_inference_steps=args.num_inference_steps,
+    #             output_type=args.output_type,
+    #         )
+    #     # if distri_config.rank == 0:
+    #     #     prof.export_memory_timeline(
+    #     #         f"{distri_config.mode}_{args.height}_{distri_config.world_size}_mem.html"
+    #     #     )
+    #     end_time = time.time()
+    # else:
         # MAX_NUM_OF_MEM_EVENTS_PER_SNAPSHOT = 100000
         # torch.cuda.memory._record_memory_history(
         #     max_entries=MAX_NUM_OF_MEM_EVENTS_PER_SNAPSHOT
         # )
-        start_time = time.time()
-        output = pipeline(
-            prompt=args.prompt,
-            generator=torch.Generator(device="cuda").manual_seed(42),
-            num_inference_steps=args.num_inference_steps,
-            output_type=args.output_type,
-        )
+    start_time = time.time()
+    output = pipeline(
+        prompt=args.prompt,
+        generator=torch.Generator(device="cuda").manual_seed(42),
+        num_inference_steps=args.num_inference_steps,
+        output_type=args.output_type,
+    )
 
-        end_time = time.time()
-        # torch.cuda.memory._dump_snapshot(
-        #     f"{distri_config.mode}_{distri_config.world_size}.pickle"
-        # )
-        torch.cuda.memory._record_memory_history(enabled=None)
+    end_time = time.time()
+    # torch.cuda.memory._dump_snapshot(
+    #     f"{distri_config.mode}_{distri_config.world_size}.pickle"
+    # )
+    torch.cuda.memory._record_memory_history(enabled=None)
 
     elapsed_time = end_time - start_time
 
