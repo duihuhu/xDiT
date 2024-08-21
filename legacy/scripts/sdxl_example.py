@@ -28,14 +28,14 @@ if __name__ == "__main__":
 
     pipeline.set_progress_bar_config(disable=distri_config.rank != 0)
     image = pipeline(
-        prompt="Astronaut in a jungle, cold color palette, muted colors, detailed, 8k",
-        generator=torch.Generator(device="cuda").manual_seed(233),
+        prompt="An astronaut riding a green horse",
+        generator=torch.Generator(device="cuda").manual_seed(42),
     ).images[0]
     import time
     t1=time.time()
     image = pipeline(
-        prompt="Astronaut in a jungle, cold color palette, muted colors, detailed, 8k",
-        generator=torch.Generator(device="cuda").manual_seed(233),
+        prompt="An astronaut riding a green horse",
+        generator=torch.Generator(device="cuda").manual_seed(42),
     ).images[0]
     t2=time.time()
     print("sdxl execute time ", t2-t1)
