@@ -27,9 +27,14 @@ if __name__ == "__main__":
         default=1024,
         help="The width of image",
     )
+    parser.add_argument(
+        "--num_inference_steps",
+        type=int,
+        default=20,
+    )
     args = parser.parse_args()
 
-    distri_config = DistriConfig(height=args.height, width=args.width, warmup_steps=1)
+    distri_config = DistriConfig(height=args.height, width=args.width, warmup_steps=1, )
 
     pipeline = DistriSDXLPipeline.from_pretrained(
         distri_config=distri_config,
@@ -48,6 +53,7 @@ if __name__ == "__main__":
     image = pipeline(
         prompt="An astronaut riding a green horse",
         generator=torch.Generator(device="cuda").manual_seed(42),
+        num_inference_steps=args.num_inference_steps,
     ).images[0]
     t2=time.time()
     print("sdxl execute time ", t2-t1)
