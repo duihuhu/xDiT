@@ -13,7 +13,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--model_id",
-        default="PixArt-alpha/PixArt-XL-2-1024-MS",
+        default="/home/jovyan/models/PixArt-XL-2-1024-MS/models--PixArt-alpha--PixArt-XL-2-1024-MS/snapshots/b89adadeccd9ead2adcb9fa2825d3fabec48d404/",
         type=str,
         help="Path to the pretrained model.",
     )
