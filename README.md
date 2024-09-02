@@ -4,12 +4,15 @@
   
   <picture>
     <img alt="xDiT" src="./assets/XDiTlogo.png" width=50%>
-
   </picture>
 
   </p>
   <h3>A Scalable Inference Engine for Diffusion Transformers (DiTs) on multi-GPU Clusters</h3>
   <strong><a href="https://arxiv.org/abs/2405.14430">📃 Paper</a> | <a href="#QuickStart">🚀 Quick Start</a> | <a href="#support-dits">🎯 Supported DiTs</a> | <a href="#dev-guide">📚 Dev Guide </a> | <a href="https://github.com/xdit-project/xDiT/discussions">📈  Discussion </a> </strong>
+  <p></p>
+
+[![](https://dcbadge.limes.pink/api/server/https://discord.gg/YEWzWfCF9S)](https://discord.gg/YEWzWfCF9S)
+
 </div>
 
 <h2 id="agenda">Table of Contents</h2>
@@ -18,13 +21,20 @@
 - [📢 Updates](#updates)
 - [🎯 Supported DiTs](#support-dits)
 - [📈 Performance](#perf)
+  - [Flux.1](#perf_flux)
+  - [HunyuanDiT](#perf_hunyuandit)
+  - [SD3](#perf_sd3)
+  - [Pixart](#perf_pixart)
+  - [Latte](#perf_latte)
 - [🚀 QuickStart](#QuickStart)
-- [✨ the xDiT's secret weapons](#secrets)
-  - [1. PipeFusion](#PipeFusion)
-  - [2. USP](#USP)
-  - [3. Hybrid Parallel](#hybrid_parallel)
-  - [4. CFG Parallel](#cfg_parallel)
-  - [5. Parallel VAE](#parallel_vae)
+- [✨ xDiT's Arsenal](#secrets)
+  - [Parallel Methods](#parallel)
+    - [1. PipeFusion](#PipeFusion)
+    - [2. Unified Sequence Parallel](#USP)
+    - [3. Hybrid Parallel](#hybrid_parallel)
+    - [4. CFG Parallel](#cfg_parallel)
+    - [5. Parallel VAE](#parallel_vae)
+  - [Compilation Acceleration](#compilation)
 - [📚  Develop Guide](#dev-guide)
 - [🚧  History and Looking for Contributions](#history)
 - [📝 Cite Us](#cite-us)
@@ -32,13 +42,14 @@
 
 <h2 id="meet-xdit">🔥 Meet xDiT</h2>
 
-Diffusion Transformers (DiTs), pivotal in text-to-image and text-to-video models, are driving advancements in high-quality image and video generation. 
-With the escalating input sequence length in DiTs, the computational demand of the Attention mechanism grows **quadratically**! 
-Consequently, multi-GPU and multi-machine deployments are essential to maintain real-time performance in online services.
+Diffusion Transformers (DiTs) are driving advancements in high-quality image and video generation. 
+With the escalating input context length in DiTs, the computational demand of the Attention mechanism grows **quadratically**! 
+Consequently, multi-GPU and multi-machine deployments are essential to meet the **real-time** requirements in online services.
 
 To meet real-time demand for DiTs applications, parallel inference is a must.
 xDiT is an inference engine designed for the parallel deployment of DiTs on large scale. 
-xDiT provides a suite of efficient parallel inference approaches for Diffusion Models.
+xDiT provides a suite of efficient parallel approaches for Diffusion Models, as well as GPU kernel accelerations.
+
 
 1. Sequence Parallelism, [USP](https://arxiv.org/abs/2405.07719) is a unified sequence parallel approach combining DeepSpeed-Ulysses, Ring-Attention.
 
@@ -50,44 +61,31 @@ xDiT provides a suite of efficient parallel inference approaches for Diffusion M
 
 The four parallel methods in xDiT can be configured in a hybrid manner, optimizing communication patterns to best suit the underlying network hardware.
 
-xDiT offers a set of APIs to adapt DiT models in [huggingface/diffusers](https://github.com/huggingface/diffusers) to hybrid parallel implementation through simple wrappers. 
+As shown in the following picture, xDiT offers a set of APIs to adapt DiT models in [huggingface/diffusers](https://github.com/huggingface/diffusers) to hybrid parallel implementation through simple wrappers. 
 If the model you require is not available in the model zoo, developing it yourself is straightforward; please refer to our [Dev Guide](#dev-guide).
-
 
 We also have implemented the following parallel stategies for reference:
 
 1. Tensor Parallelism
 2. [DistriFusion](https://arxiv.org/abs/2402.19481)
 
-The communication and memory costs associated with the aforementioned parallelism, except for the CFG and DP, in DiTs are detailed in the table below. (* denotes that communication can be overlapped with computation.)
 
+Optimization orthogonal to parallelization focuses on accelerating single GPU performance. 
+In addition to utilizing well-known Attention optimization libraries, we leverage compilation acceleration technologies such as `torch.compile` and `onediff`.
 
-As we can see, PipeFusion and Sequence Parallel achieve lowest communication cost on different scales and hardware configurations, making them suitable foundational components for a hybrid approach.
+The overview of xDiT is shown as follows.
 
-𝒑: Number of pixels;
-𝒉𝒔: Model hidden size;
-𝑳: Number of model layers;
-𝑷: Total model parameters;
-𝑵: Number of parallel devices;
-𝑴: Number of patch splits;
-𝑸𝑶: Query and Output parameter count;
-𝑲𝑽: KV Activation parameter count;
-𝑨 = 𝑸 = 𝑶 = 𝑲 = 𝑽: Equal parameters for Attention, Query, Output, Key, and Value;
+<picture>
+  <img alt="xDiT" src="./assets/methods/xdit_overview.png">
+</picture>
 
-<div align="center">
-
-|          | attn-KV | communication cost | param memory | activations memory | extra buff memory |
-|:--------:|:-------:|:-----------------:|:-----:|:-----------:|:----------:|
-| Tensor Parallel | fresh | $4O(p \times hs)L$ | $\frac{1}{N}P$ | $\frac{2}{N}A = \frac{1}{N}QO$ | $\frac{2}{N}A = \frac{1}{N}KV$ |
-| DistriFusion* | stale | $2O(p \times hs)L$ | $P$ | $\frac{2}{N}A = \frac{1}{N}QO$ | $2AL = (KV)L$ |
-| Ring Sequence Parallel* | fresh | $2O(p \times hs)L$ | $P$ | $\frac{2}{N}A = \frac{1}{N}QO$ | $\frac{2}{N}A = \frac{1}{N}KV$ |
-| Ulysses Sequence Parallel | fresh | $\frac{4}{N}O(p \times hs)L$ | $P$ | $\frac{2}{N}A = \frac{1}{N}QO$ | $\frac{2}{N}A = \frac{1}{N}KV$ |
-| PipeFusion* | stale- | $2O(p \times hs)$ | $\frac{1}{N}P$ | $\frac{2}{M}A = \frac{1}{M}QO$ | $\frac{2L}{N}A = \frac{1}{N}(KV)L$ |
-
-</div>
 
 <h2 id="updates">📢 Updates</h2>
 
+* ⚙️**August 30, 2024**: Supporting(WIP) CogVideoX. The inference scripts are [examples/latte_example](examples/cogvideox_example.py).
+* 🎉**August 26, 2024**: We apply torch.compile and [onediff](https://github.com/siliconflow/onediff) nexfort backend to accelerate GPU kernels speed.
+* 🎉**August 9, 2024**: Support Latte sequence parallel version. The inference scripts are [examples/latte_example](examples/latte_example.py).
+* 🎉**August 8, 2024**: Support Flux sequence parallel version. The inference scripts are [examples/flux_example](examples/flux_example.py).
 * 🎉**August 2, 2024**: Support Stable Diffusion 3 hybrid parallel version. The inference scripts are [examples/sd3_example](examples/sd3_example.py).
 * 🎉**July 18, 2024**: Support PixArt-Sigma and PixArt-Alpha. The inference scripts are [examples/pixartsigma_example.py](examples/pixartsigma_example.py), [examples/pixartalpha_example.py](examples/pixartalpha_example.py).
 * 🎉**July 17, 2024**: Rename the project to xDiT. The project has evolved from a collection of parallel methods into a unified inference framework and supported the hybrid parallel for DiTs.
@@ -98,61 +96,81 @@ As we can see, PipeFusion and Sequence Parallel achieve lowest communication cos
 
 <h2 id="support-dits">🎯 Supported DiTs</h2>
 
--  [🔴 PixArt-Sigma](https://huggingface.co/PixArt-alpha/PixArt-Sigma-XL-2-1024-MS)
--  [🔵 HunyuanDiT-v1.2-Diffusers](https://huggingface.co/Tencent-Hunyuan/HunyuanDiT-v1.2-Diffusers)
--  [🟢 PixArt-alpha](https://huggingface.co/PixArt-alpha/PixArt-alpha)
--  [🟠 Stable Diffusion 3](https://huggingface.co/stabilityai/stable-diffusion-3-medium-diffusers)
--  [🔴 DiT-XL](https://huggingface.co/facebook/DiT-XL-2-256)
+<div align="center">
 
+| Model Name | CFG | SP | PipeFusion |
+| --- | --- | --- | --- |
+| [🎬 CogVideoX](https://huggingface.co/THUDM/CogVideoX-2b) | ❎ | ❎ | ❎ | 
+| [🎬 Latte](https://huggingface.co/maxin-cn/Latte-1) | ❎ | ✔️ | ❎ | 
+| [🔵 HunyuanDiT-v1.2-Diffusers](https://huggingface.co/Tencent-Hunyuan/HunyuanDiT-v1.2-Diffusers) | ✔️ | ✔️ | ✔️ |
+| [🟠 Flux](https://huggingface.co/black-forest-labs/FLUX.1-schnell) | NA | ✔️ | ❎ |
+| [🔴 PixArt-Sigma](https://huggingface.co/PixArt-alpha/PixArt-Sigma-XL-2-1024-MS) | ✔️ | ✔️ | ✔️ |
+| [🟢 PixArt-alpha](https://huggingface.co/PixArt-alpha/PixArt-alpha) | ✔️ | ✔️ | ✔️ |
+| [🟠 Stable Diffusion 3](https://huggingface.co/stabilityai/stable-diffusion-3-medium-diffusers) | ✔️ | ✔️ | ✔️ |
+
+</div>
+
+### Supported by legacy version only, including DistriFusion and Tensor Parallel as the standalong parallel strategies:
+
+<div align="center">
+
+[🔴 DiT-XL](https://huggingface.co/facebook/DiT-XL-2-256)
+</div>
 
 <h2 id="perf">📈 Performance</h2>
 
-Here are the benchmark results for Pixart-Alpha using the 20-step DPM solver as the scheduler across various image resolutions. To replicate these findings, please refer to the script at [./legacy/scripts/benchmark.sh](./legacy/scripts/benchmark.sh).
+<h3 id="perf_flux">Flux.1</h3>
 
-**TBD**: Updates results on hybrid parallelism.
+1. [Flux Performance Report](./docs/performance/flux.md)
 
-1. The Latency on 4xA100-80GB (PCIe)
+<h3 id="perf_hunyuandit">HunyuanDiT</h3>
 
-<div align="center">
-    <img src="./assets/latency-A100-PCIe.png" alt="A100 PCIe latency">
-</div>
+2. [HunyuanDiT Performance Report](./docs/performance/hunyuandit.md)
 
-2. The Latency on 8xL20-48GB (PCIe)
+<h3 id="perf_sd3">SD3</h3>
 
-<div align="center">
-    <img src="./assets/latency-L20.png" alt="L20 latency">
-</div>
+3. [Stable Diffusion 3 Performance Report](./docs/performance/sd3.md)
 
-3. The Latency on 8xA100-80GB (NVLink)
+<h3 id="perf_pixart">Pixart</h3>
 
-<div align="center">
-    <img src="./assets/latency-A100-NVLink.png" alt="latency-A100-NVLink">
-</div>
+4. [Pixart-Alpha Performance Report (legacy)](./docs/performance/pixart_alpha_legacy.md)
 
-4. The Latency on 4xT4-16GB (PCIe)
+<h3 id="perf_latte">Pixart</h3>
 
-<div align="center">
-    <img src="./assets/latency-T4.png" 
-    alt="latency-T4">
-</div>
+5. [Latte Performance Report](./docs/performance/latte.md)
 
 
 <h2 id="QuickStart">🚀 QuickStart</h2>
 
-1. Install yunchang for sequence parallel.
+### 1. Install from pip (current [version](./xfuser/__version__.py))
+
+```
+pip install xfuser
+```
+
+### 2. Install from source 
+
+#### 2.1 Install yunchang for sequence parallel.
 
 Install yunchang from [feifeibear/long-context-attention](https://github.com/feifeibear/long-context-attention).
-Please note that it has a dependency on flash attention and specific GPU model requirements. We recommend installing yunchang from the source code rather than using `pip install yunchang==0.2.0`.
+Please note that it depends on flash attention and specific GPU model requirements. We recommend installing yunchang from the source code rather than using `pip install yunchang==0.3.0`.
 
-2. Install xDiT
+#### 2.2 Install xDiT
 
 ```
 python setup.py install
 ```
 
-3. Usage
+### 2. Usage
 
-We provide examples demonstrating how to run models with PipeFusion in the [./examples/](./examples/) directory. To inspect the available options for the PixArt-alpha example, use the following command:
+We provide examples demonstrating how to run models with xDiT in the [./examples/](./examples/) directory. 
+You can easily modify the model type, model directory, and parallel options in the [examples/run.sh](examples/run.sh) within the script to run some already supported DiT models.
+
+```bash
+bash examples/run.sh
+```
+
+To inspect the available options for the PixArt-alpha example, use the following command:
 
 ```bash
 python ./examples/pixartalpha_example.py -h
@@ -174,13 +192,15 @@ Runtime Options:
   --warmup_steps WARMUP_STEPS
                         Warmup steps in generation.
   --use_parallel_vae
+  --use_torch_compile   Enable torch.compile to accelerate inference in a single card
   --seed SEED           Random seed for operations.
   --output_type OUTPUT_TYPE
                         Output type of the pipeline.
+  --enable_sequential_cpu_offload
+                        Offloading the weights to the CPU.
 
 Parallel Processing Options:
-  --do_classifier_free_guidance
-  --use_split_batch     Use split batch in classifier_free_guidance. cfg_degree will be 2 if set
+  --use_cfg_parallel    Use split batch in classifier_free_guidance. cfg_degree will be 2 if set
   --data_parallel_degree DATA_PARALLEL_DEGREE
                         Data parallel degree.
   --ulysses_degree ULYSSES_DEGREE
@@ -225,7 +245,7 @@ examples/pixartalpha_example.py \
 --num_inference_steps 20 \
 --warmup_steps 0 \
 --prompt "A small dog" \
---use_split_batch
+--use_cfg_parallel
 ```
 
 
@@ -235,29 +255,82 @@ We observed that a warmup of 0 had no effect on the PixArt model.
 Users can tune this value according to their specific tasks.
 
 
-<h2 id="secrets">✨ The xDiT's Secret Weapons</h2>
+<h2 id="secrets">✨ The xDiT's Arsenal</h2>
 
-The exceptional capabilities of xDiT stem from our innovative technologies.
+The remarkable performance of xDiT is attributed to two key facets.
+Firstly, it leverages parallelization techniques, pioneering innovations such as USP, PipeFusion, and hybrid parallelism, to scale DiTs inference to unprecedented scales.
 
-<h3 id="PipeFusion">1. PipeFusion</h3>
+Secondly, we employ compilation technologies to enhance execution on GPUs, integrating established solutions like `torch.compile` and `onediff` to optimize xDiT's performance.
+
+<h3 id="parallel">1. Parallel Methods</h3>
+
+As illustrated in the accompanying images, xDiTs offer a comprehensive set of parallelization techniques. For the DiT backbone, the foundational methods—Data, USP, PipeFusion, and CFG parallel—operate in a hybrid fashion. Additionally, the distinct methods, Tensor and DistriFusion parallel, function independently.
+For the VAE module, xDiT offers a parallel implementation, [DistVAE](https://github.com/xdit-project/DistVAE), designed to prevent out-of-memory (OOM) issues.
+The (<span style="color: red;">xDiT</span>) highlights the methods first proposed by use.
+
+<div align="center">
+    <img src="assets/methods/xdit_method.png" alt="xdit methods">
+</div>
+
+The communication and memory costs associated with the aforementioned intra-image parallelism, except for the CFG and DP (they are inter-image parallel), in DiTs are detailed in the table below. (* denotes that communication can be overlapped with computation.)
+
+As we can see, PipeFusion and Sequence Parallel achieve lowest communication cost on different scales and hardware configurations, making them suitable foundational components for a hybrid approach.
+
+𝒑: Number of pixels;
+𝒉𝒔: Model hidden size;
+𝑳: Number of model layers;
+𝑷: Total model parameters;
+𝑵: Number of parallel devices;
+𝑴: Number of patch splits;
+𝑸𝑶: Query and Output parameter count;
+𝑲𝑽: KV Activation parameter count;
+𝑨 = 𝑸 = 𝑶 = 𝑲 = 𝑽: Equal parameters for Attention, Query, Output, Key, and Value;
+
+<div align="center">
+
+|          | attn-KV | communication cost | param memory | activations memory | extra buff memory |
+|:--------:|:-------:|:-----------------:|:-----:|:-----------:|:----------:|
+| Tensor Parallel | fresh | $4O(p \times hs)L$ | $\frac{1}{N}P$ | $\frac{2}{N}A = \frac{1}{N}QO$ | $\frac{2}{N}A = \frac{1}{N}KV$ |
+| DistriFusion* | stale | $2O(p \times hs)L$ | $P$ | $\frac{2}{N}A = \frac{1}{N}QO$ | $2AL = (KV)L$ |
+| Ring Sequence Parallel* | fresh | $2O(p \times hs)L$ | $P$ | $\frac{2}{N}A = \frac{1}{N}QO$ | $\frac{2}{N}A = \frac{1}{N}KV$ |
+| Ulysses Sequence Parallel | fresh | $\frac{4}{N}O(p \times hs)L$ | $P$ | $\frac{2}{N}A = \frac{1}{N}QO$ | $\frac{2}{N}A = \frac{1}{N}KV$ |
+| PipeFusion* | stale- | $2O(p \times hs)$ | $\frac{1}{N}P$ | $\frac{2}{M}A = \frac{1}{M}QO$ | $\frac{2L}{N}A = \frac{1}{N}(KV)L$ |
+
+</div>
+
+<h4 id="PipeFusion">1.1. PipeFusion</h4>
 
 [PipeFusion: Displaced Patch Pipeline Parallelism for Diffusion Models](./docs/methods/pipefusion.md)
 
-<h3 id="USP">2. USP: Unified Sequence Parallelism</h3>
+<h4 id="USP">1.2. USP: Unified Sequence Parallelism</h4>
 
 [USP: A Unified Sequence Parallelism Approach for Long Context Generative AI](./docs/methods/usp.md)
 
-<h3 id="hybrid_parallel">3. Hybrid Parallel</h3>
+<h4 id="hybrid_parallel">1.3. Hybrid Parallel</h4>
 
 [Hybrid Parallelism](./docs/methods/hybrid.md)
 
-<h3 id="cfg_parallel">4. CFG Parallel</h3>
+<h4 id="cfg_parallel">1.4. CFG Parallel</h4>
 
 [CFG Parallel](./docs/methods/cfg_parallel.md)
 
-<h3 id="parallel_vae">5. Parallel VAE</h3>
+<h4 id="parallel_vae">1.5. Parallel VAE</h4>
 
 [Patch Parallel VAE](./docs/methods/parallel_vae.md)
+
+<h3 id="compilation">Compilation Acceleration</h3>
+
+We utilize two compilation acceleration techniques, [torch.compile](https://pytorch.org/tutorials/intermediate/torch_compile_tutorial.html) and [onediff](https://github.com/siliconflow/onediff), to enhance runtime speed on GPUs. These compilation accelerations are used in conjunction with parallelization methods.
+
+We employ the nexfort backend of onediff. Please install it before use:
+
+```
+pip install onediff
+pip install -U nexfort
+```
+
+For usage instructions, refer to the [example/run.sh](./examples/run.sh). Simply append `--use_torch_compile` or `--use_onediff` to your command. Note that these options are mutually exclusive, and their performance varies across different scenarios.
+
 
 <h2 id="dev-guide">📚  Develop Guide</h2>
 
@@ -287,6 +360,13 @@ We also welcome developers to join and contribute more features and models to th
       eprint={2405.07719},
       archivePrefix={arXiv},
       primaryClass={cs.CV}
+}
+
+@article{fang2024unified,
+      title={USP: a Unified Sequence Parallelism Approach for Long Context Generative AI},
+      author={Fang, Jiarui and Zhao, Shangchun},
+      journal={arXiv preprint arXiv:2405.07719},
+      year={2024}
 }
 ```
 

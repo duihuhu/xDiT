@@ -8,7 +8,7 @@ import torch
 import torch.distributed
 
 from xfuser.logger import init_logger
-from xfuser.distributed import init_distributed_environment
+from xfuser.core.distributed import init_distributed_environment
 from xfuser.config.config import (
     EngineConfig,
     ParallelConfig,
@@ -18,10 +18,11 @@ from xfuser.config.config import (
     DataParallelConfig,
     ModelConfig,
     InputConfig,
-    RuntimeConfig
+    RuntimeConfig,
 )
 
 logger = init_logger(__name__)
+
 
 class FlexibleArgumentParser(argparse.ArgumentParser):
     """ArgumentParser that allows both underscore and dash in names."""
@@ -33,14 +34,13 @@ class FlexibleArgumentParser(argparse.ArgumentParser):
         # Convert underscores to dashes and vice versa in argument names
         processed_args = []
         for arg in args:
-            if arg.startswith('--'):
-                if '=' in arg:
-                    key, value = arg.split('=', 1)
-                    key = '--' + key[len('--'):].replace('-', '_')
-                    processed_args.append(f'{key}={value}')
+            if arg.startswith("--"):
+                if "=" in arg:
+                    key, value = arg.split("=", 1)
+                    key = "--" + key[len("--") :].replace("-", "_")
+                    processed_args.append(f"{key}={value}")
                 else:
-                    processed_args.append('--' +
-                                          arg[len('--'):].replace('-', '_'))
+                    processed_args.append("--" + arg[len("--") :].replace("-", "_"))
             else:
                 processed_args.append(arg)
 
@@ -52,9 +52,11 @@ def nullable_str(val: str):
         return None
     return val
 
+
 @dataclass
 class xFuserArgs:
     """Arguments for xFuser engine."""
+
     # Model arguments
     model: str
     download_dir: Optional[str] = None
@@ -64,71 +66,172 @@ class xFuserArgs:
     # use_cuda_graph: bool = True
     use_parallel_vae: bool = False
     # use_profiler: bool = False
+    use_torch_compile: bool = False
+    use_onediff: bool = False
     # Parallel arguments
-        # data parallel
+    # data parallel
     data_parallel_degree: int = 1
-    use_split_batch: bool = False
-    do_classifier_free_guidance: bool = True
-        # sequence parallel
+    use_cfg_parallel: bool = False
+    # sequence parallel
     ulysses_degree: Optional[int] = None
     ring_degree: Optional[int] = None
-        # tensor parallel
+    # tensor parallel
     tensor_parallel_degree: int = 1
-    split_scheme: Optional[str] = 'row'
-        # pipefusion parallel
+    split_scheme: Optional[str] = "row"
+    # pipefusion parallel
     pipefusion_parallel_degree: int = 1
     num_pipeline_patch: Optional[int] = None
     attn_layer_num_for_pp: Optional[List[int]] = None
     # Input arguments
     height: int = 1024
     width: int = 1024
+    num_frames: int = 49
     num_inference_steps: int = 20
     prompt: Union[str, List[str]] = ""
     negative_prompt: Union[str, List[str]] = ""
     no_use_resolution_binning: bool = False
     seed: int = 42
     output_type: str = "pil"
-
+    enable_sequential_cpu_offload: bool = False
 
     @staticmethod
     def add_cli_args(parser: FlexibleArgumentParser):
         """Shared CLI arguments for xFuser engine."""
         # Model arguments
-        model_group = parser.add_argument_group('Model Options')
-        model_group.add_argument('--model', type=str, default="PixArt-alpha/PixArt-XL-2-1024-MS", help='Name or path of the huggingface model to use.')
-        model_group.add_argument('--download-dir', type=nullable_str, default=xFuserArgs.download_dir, help='Directory to download and load the weights, default to the default cache dir of huggingface.')
-        model_group.add_argument('--trust-remote-code', action='store_true', help='Trust remote code from huggingface.')
+        model_group = parser.add_argument_group("Model Options")
+        model_group.add_argument(
+            "--model",
+            type=str,
+            default="PixArt-alpha/PixArt-XL-2-1024-MS",
+            help="Name or path of the huggingface model to use.",
+        )
+        model_group.add_argument(
+            "--download-dir",
+            type=nullable_str,
+            default=xFuserArgs.download_dir,
+            help="Directory to download and load the weights, default to the default cache dir of huggingface.",
+        )
+        model_group.add_argument(
+            "--trust-remote-code",
+            action="store_true",
+            help="Trust remote code from huggingface.",
+        )
 
         # Runtime arguments
-        runtime_group = parser.add_argument_group('Runtime Options')
-        runtime_group.add_argument("--warmup_steps", type=int, default=1, help="Warmup steps in generation.")
+        runtime_group = parser.add_argument_group("Runtime Options")
+        runtime_group.add_argument(
+            "--warmup_steps", type=int, default=1, help="Warmup steps in generation."
+        )
         # runtime_group.add_argument("--use_cuda_graph", action="store_true")
         runtime_group.add_argument("--use_parallel_vae", action="store_true")
         # runtime_group.add_argument("--use_profiler", action="store_true")
+        runtime_group.add_argument(
+            "--use_torch_compile",
+            action="store_true",
+            help="Enable torch.compile to accelerate inference in a single card",
+        )
+        runtime_group.add_argument(
+            "--use_onediff",
+            action="store_true",
+            help="Enable onediff to accelerate inference in a single card",
+        )
 
         # Parallel arguments
-        parallel_group = parser.add_argument_group('Parallel Processing Options')
-        parallel_group.add_argument("--do_classifier_free_guidance", action="store_true")
-        parallel_group.add_argument("--use_split_batch", action="store_true", help="Use split batch in classifier_free_guidance. cfg_degree will be 2 if set")
-        parallel_group.add_argument("--data_parallel_degree", type=int, default=1, help="Data parallel degree.")
-        parallel_group.add_argument("--ulysses_degree", type=int, default=None, help="Ulysses sequence parallel degree. Used in attention layer.")
-        parallel_group.add_argument("--ring_degree", type=int, default=None, help="Ring sequence parallel degree. Used in attention layer.")
-        parallel_group.add_argument("--pipefusion_parallel_degree", type=int, default=1, help="Pipefusion parallel degree. Indicates the number of pipeline stages.")
-        parallel_group.add_argument("--num_pipeline_patch", type=int, default=None, help="Number of patches the feature map should be segmented in pipefusion parallel.")
-        parallel_group.add_argument("--attn_layer_num_for_pp", default=None, nargs="*", type=int, help="List representing the number of layers per stage of the pipeline in pipefusion parallel")
-        parallel_group.add_argument("--tensor_parallel_degree", type=int, default=1, help="Tensor parallel degree.")
-        parallel_group.add_argument("--split_scheme", type=str, default='row', help="Split scheme for tensor parallel.")
+        parallel_group = parser.add_argument_group("Parallel Processing Options")
+        parallel_group.add_argument(
+            "--use_cfg_parallel",
+            action="store_true",
+            help="Use split batch in classifier_free_guidance. cfg_degree will be 2 if set",
+        )
+        parallel_group.add_argument(
+            "--data_parallel_degree", type=int, default=1, help="Data parallel degree."
+        )
+        parallel_group.add_argument(
+            "--ulysses_degree",
+            type=int,
+            default=None,
+            help="Ulysses sequence parallel degree. Used in attention layer.",
+        )
+        parallel_group.add_argument(
+            "--ring_degree",
+            type=int,
+            default=None,
+            help="Ring sequence parallel degree. Used in attention layer.",
+        )
+        parallel_group.add_argument(
+            "--pipefusion_parallel_degree",
+            type=int,
+            default=1,
+            help="Pipefusion parallel degree. Indicates the number of pipeline stages.",
+        )
+        parallel_group.add_argument(
+            "--num_pipeline_patch",
+            type=int,
+            default=None,
+            help="Number of patches the feature map should be segmented in pipefusion parallel.",
+        )
+        parallel_group.add_argument(
+            "--attn_layer_num_for_pp",
+            default=None,
+            nargs="*",
+            type=int,
+            help="List representing the number of layers per stage of the pipeline in pipefusion parallel",
+        )
+        parallel_group.add_argument(
+            "--tensor_parallel_degree",
+            type=int,
+            default=1,
+            help="Tensor parallel degree.",
+        )
+        parallel_group.add_argument(
+            "--split_scheme",
+            type=str,
+            default="row",
+            help="Split scheme for tensor parallel.",
+        )
 
         # Input arguments
-        input_group = parser.add_argument_group('Input Options')
-        input_group.add_argument("--height", type=int, default=1024, help="The height of image")
-        input_group.add_argument("--width", type=int, default=1024, help="The width of image")
-        input_group.add_argument("--prompt", type=str, nargs="*", default="", help="Prompt for the model.")
+        input_group = parser.add_argument_group("Input Options")
+        input_group.add_argument(
+            "--height", type=int, default=1024, help="The height of image"
+        )
+        input_group.add_argument(
+            "--width", type=int, default=1024, help="The width of image"
+        )
+        input_group.add_argument(
+            "--num_frames", type=int, default=49, help="The frames of video"
+        )
+        input_group.add_argument(
+            "--prompt", type=str, nargs="*", default="", help="Prompt for the model."
+        )
         input_group.add_argument("--no_use_resolution_binning", action="store_true")
-        input_group.add_argument("--negative_prompt", type=str, nargs="*", default="", help="Negative prompt for the model.")
-        input_group.add_argument("--num_inference_steps", type=int, default=20, help="Number of inference steps.")
-        runtime_group.add_argument("--seed", type=int, default=42, help="Random seed for operations.")
-        runtime_group.add_argument("--output_type", type=str, default="pil", help="Output type of the pipeline.")
+        input_group.add_argument(
+            "--negative_prompt",
+            type=str,
+            nargs="*",
+            default="",
+            help="Negative prompt for the model.",
+        )
+        input_group.add_argument(
+            "--num_inference_steps",
+            type=int,
+            default=20,
+            help="Number of inference steps.",
+        )
+        runtime_group.add_argument(
+            "--seed", type=int, default=42, help="Random seed for operations."
+        )
+        runtime_group.add_argument(
+            "--output_type",
+            type=str,
+            default="pil",
+            help="Output type of the pipeline.",
+        )
+        runtime_group.add_argument(
+            "--enable_sequential_cpu_offload",
+            action="store_true",
+            help="Offloading the weights to the CPU.",
+        )
 
         return parser
 
@@ -140,10 +243,13 @@ class xFuserArgs:
         engine_args = cls(**{attr: getattr(args, attr) for attr in attrs})
         return engine_args
 
-    def create_config(self, ) -> Tuple[EngineConfig, InputConfig]:
+    def create_config(
+        self,
+    ) -> Tuple[EngineConfig, InputConfig]:
         if not torch.distributed.is_initialized():
-            logger.warning("Distributed environment is not initialized. "
-                           "Initializing...")
+            logger.warning(
+                "Distributed environment is not initialized. " "Initializing..."
+            )
             init_distributed_environment()
 
         model_config = ModelConfig(
@@ -156,14 +262,15 @@ class xFuserArgs:
             warmup_steps=self.warmup_steps,
             # use_cuda_graph=self.use_cuda_graph,
             use_parallel_vae=self.use_parallel_vae,
+            use_torch_compile=self.use_torch_compile,
+            use_onediff=self.use_onediff,
             # use_profiler=self.use_profiler,
         )
-        
+
         parallel_config = ParallelConfig(
             dp_config=DataParallelConfig(
                 dp_degree=self.data_parallel_degree,
-                use_split_batch=self.use_split_batch,
-                do_classifier_free_guidance=self.do_classifier_free_guidance,
+                use_cfg_parallel=self.use_cfg_parallel,
             ),
             sp_config=SequenceParallelConfig(
                 ulysses_degree=self.ulysses_degree,
@@ -189,6 +296,7 @@ class xFuserArgs:
         input_config = InputConfig(
             height=self.height,
             width=self.width,
+            num_frames=self.num_frames,
             use_resolution_binning=not self.no_use_resolution_binning,
             batch_size=len(self.prompt) if isinstance(self.prompt, list) else 1,
             prompt=self.prompt,

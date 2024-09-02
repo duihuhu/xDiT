@@ -6,10 +6,18 @@ from .scheduling_dpmsolver_multistep import (
 from .scheduling_flow_match_euler_discrete import (
     xFuserFlowMatchEulerDiscreteSchedulerWrapper,
 )
+from .scheduling_ddim import xFuserDDIMSchedulerWrapper
+from .scheduling_ddpm import xFuserDDPMSchedulerWrapper
+from .scheduling_ddim_cogvideox import xFuserCogVideoXDDIMSchedulerWrapper
+from .scheduling_dpm_cogvideox import xFuserCogVideoXDPMSchedulerWrapper
 
 __all__ = [
     "xFuserSchedulerWrappersRegister",
     "xFuserSchedulerBaseWrapper",
     "xFuserDPMSolverMultistepSchedulerWrapper",
     "xFuserFlowMatchEulerDiscreteSchedulerWrapper",
+    "xFuserDDIMSchedulerWrapper",
+    "xFuserCogVideoXDDIMSchedulerWrapper",
+    "xFuserCogVideoXDPMSchedulerWrapper",
+    "xFuserDDPMSchedulerWrapper",
 ]
