@@ -23,7 +23,7 @@ export MODEL_TYPE="Pixart-alpha"
 # Configuration for different model types
 # script, model_id, inference_step
 declare -A MODEL_CONFIGS=(
-    ["Pixart-alpha"]="pixartalpha_example.py /mnt/models/SD/PixArt-XL-2-1024-MS 20"
+    ["Pixart-alpha"]="pixartalpha_example.py /home/jovyan/models/PixArt-XL-2-1024-MS/models/snapshots/b89adadeccd9ead2adcb9fa2825d3fabec48d404 20"
     # ["Pixart-sigma"]="pixartsigma_example.py /cfs/dit/PixArt-Sigma-XL-2-2K-MS 20"
     # ["Sd3"]="sd3_example.py /cfs/dit/stable-diffusion-3-medium-diffusers 20"
     # ["Flux"]="flux_example.py /cfs/dit/FLUX.1-schnell 4"
