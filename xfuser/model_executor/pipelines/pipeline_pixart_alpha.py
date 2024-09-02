@@ -363,6 +363,7 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
         # 8. Decode latents (only rank 0)
         #! ---------------------------------------- ADD BELOW ----------------------------------------
         if is_dp_last_group():
+            torch.cuda.synchronize() 
             t2 = time.time()
             #! ---------------------------------------- ADD ABOVE ----------------------------------------
             if not output_type == "latent":
@@ -375,6 +376,7 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
                     )
             else:
                 image = latents
+            torch.cuda.synchronize() 
             t3 = time.time()
             print("execute time ", t3-t2, t2-t1)
             if not output_type == "latent":
