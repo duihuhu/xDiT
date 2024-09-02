@@ -363,6 +363,7 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
         # 8. Decode latents (only rank 0)
         #! ---------------------------------------- ADD BELOW ----------------------------------------
         if is_dp_last_group():
+            time.sleep(4)
             torch.cuda.synchronize() 
             print("start decode")
             t2 = time.time()
