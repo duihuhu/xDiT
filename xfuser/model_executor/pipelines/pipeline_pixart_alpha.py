@@ -311,7 +311,7 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
         )
         #! ---------------------------------------- MODIFIED BELOW ----------------------------------------
         num_pipeline_warmup_steps = get_runtime_state().runtime_config.warmup_steps
-
+        print("aaaaa")
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             if (
                 get_pipeline_parallel_world_size() > 1
