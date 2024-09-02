@@ -164,7 +164,6 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
         if "mask_feature" in kwargs:
             deprecation_message = "The use of `mask_feature` is deprecated. It is no longer used in any computation and that doesn't affect the end results. It will be removed in a future version."
             deprecate("mask_feature", "1.0.0", deprecation_message, standard_warn=False)
-        print("Aaaaaaaaa")
         # 1. Check inputs. Raise error if not correct
         height = height or self.transformer.config.sample_size * self.vae_scale_factor
         width = width or self.transformer.config.sample_size * self.vae_scale_factor
@@ -312,7 +311,7 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
         )
         #! ---------------------------------------- MODIFIED BELOW ----------------------------------------
         num_pipeline_warmup_steps = get_runtime_state().runtime_config.warmup_steps
-        
+        t1 = time.time()
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             if (
                 get_pipeline_parallel_world_size() > 1
@@ -364,6 +363,7 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
         # 8. Decode latents (only rank 0)
         #! ---------------------------------------- ADD BELOW ----------------------------------------
         if is_dp_last_group():
+            t2 = time.time()
             #! ---------------------------------------- ADD ABOVE ----------------------------------------
             if not output_type == "latent":
                 image = self.vae.decode(
@@ -375,7 +375,8 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
                     )
             else:
                 image = latents
-
+            t3 = time.time()
+            print("execute time ", t3-t2, t2-t1)
             if not output_type == "latent":
                 image = self.image_processor.postprocess(image, output_type=output_type)
             # Offload all models
