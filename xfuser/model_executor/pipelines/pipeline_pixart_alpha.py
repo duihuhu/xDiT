@@ -372,7 +372,7 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
                 )[0]
                 torch.cuda.synchronize() 
                 t3 = time.time()
-                print("end decode execute time ", t3-t2, t2-t1)
+                print("end decode execute time ", t3-t2, t2-t1, "\n")
                 if use_resolution_binning:
                     image = self.image_processor.resize_and_crop_tensor(
                         image, orig_width, orig_height
