@@ -32,6 +32,8 @@ from xfuser.core.distributed import (
 from xfuser.model_executor.pipelines import xFuserPipelineBaseWrapper
 from .register import xFuserPipelineWrapperRegister
 
+import time
+
 logger = init_logger(__name__)
 
 
@@ -382,6 +384,7 @@ class xFuserHunyuanDiTPipeline(xFuserPipelineBaseWrapper):
 
         #! ---------------------------------------- MODIFIED BELOW ----------------------------------------
         num_pipeline_warmup_steps = get_runtime_state().runtime_config.warmup_steps
+        t1 = time.time()
 
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             if (
@@ -450,7 +453,8 @@ class xFuserHunyuanDiTPipeline(xFuserPipelineBaseWrapper):
                     sync_only=True,
                 )
         #! ---------------------------------------- MODIFIED ABOVE ----------------------------------------
-
+        torch.cuda.synchronize() 
+        t2 = time.time()
         # 8. Decode latents (only rank 0)
         #! ---------------------------------------- ADD BELOW ----------------------------------------
         if is_dp_last_group():
@@ -459,6 +463,9 @@ class xFuserHunyuanDiTPipeline(xFuserPipelineBaseWrapper):
                 image = self.vae.decode(
                     latents / self.vae.config.scaling_factor, return_dict=False
                 )[0]
+                torch.cuda.synchronize() 
+                t3 = time.time()
+                print("end decode execute time ", t3-t2, t2-t1)
                 image, has_nsfw_concept = self.run_safety_checker(
                     image, device, prompt_embeds.dtype
                 )
