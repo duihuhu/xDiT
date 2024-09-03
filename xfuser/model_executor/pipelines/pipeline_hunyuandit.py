@@ -254,7 +254,7 @@ class xFuserHunyuanDiTPipeline(xFuserPipelineBaseWrapper):
             num_blocks_per_stage = len(self.transformer.blocks)
             get_runtime_state()._reset_recv_skip_buffer(num_blocks_per_stage)
         #! ---------------------------------------- ADDED ABOVE ----------------------------------------
-
+        print("self.encode_prompt negative_prompt ", negative_prompt )
         # 3. Encode input prompt
         (
             prompt_embeds,
