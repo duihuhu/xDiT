@@ -363,7 +363,6 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
         # 8. Decode latents (only rank 0)
         #! ---------------------------------------- ADD BELOW ----------------------------------------
         if is_dp_last_group():
-            time.sleep(4)
             torch.cuda.synchronize() 
             print("start decode")
             t2 = time.time()
@@ -372,16 +371,16 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
                 image = self.vae.decode(
                     latents / self.vae.config.scaling_factor, return_dict=False
                 )[0]
+                torch.cuda.synchronize() 
+                t3 = time.time()
+                print("execute time ", t3-t2, t2-t1)
                 if use_resolution_binning:
                     image = self.image_processor.resize_and_crop_tensor(
                         image, orig_width, orig_height
                     )
             else:
                 image = latents
-            print("end decode")
-            torch.cuda.synchronize() 
-            t3 = time.time()
-            print("execute time ", t3-t2, t2-t1)
+
             if not output_type == "latent":
                 image = self.image_processor.postprocess(image, output_type=output_type)
             # Offload all models
