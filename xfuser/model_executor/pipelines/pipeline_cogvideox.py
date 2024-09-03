@@ -31,6 +31,7 @@ from xfuser.core.distributed import (
 
 from xfuser.model_executor.pipelines import xFuserPipelineBaseWrapper
 from .register import xFuserPipelineWrapperRegister
+import time
 
 @xFuserPipelineWrapperRegister.register(CogVideoXPipeline)
 class xFuserCogVideoXPipeline(xFuserPipelineBaseWrapper):
@@ -242,7 +243,7 @@ class xFuserCogVideoXPipeline(xFuserPipelineBaseWrapper):
 
         # 7. Denoising loop
         num_warmup_steps = max(len(timesteps) - num_inference_steps * self.scheduler.order, 0)
-        
+        t1 = time.time()
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             latents = self._init_video_sync_pipeline(latents)
             # for DPM-solver++
@@ -322,10 +323,14 @@ class xFuserCogVideoXPipeline(xFuserPipelineBaseWrapper):
                     for sp_patch_idx in range(sp_degree)
                 ]
             latents = torch.cat(latents_list, dim=-2)
-        
+        torch.cuda.synchronize() 
+        t2 = time.time()
         if get_data_parallel_rank() == get_data_parallel_world_size() - 1:
             if not (output_type == "latents" or output_type == "latent"):
                 video = self.decode_latents(latents)
+                torch.cuda.synchronize() 
+                t3 = time.time()
+                print("end decode execute time ", t3-t2, t2-t1)
                 video = self.video_processor.postprocess_video(video=video, output_type=output_type)
             else:
                 video = latents
