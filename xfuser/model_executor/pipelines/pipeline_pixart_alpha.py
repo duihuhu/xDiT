@@ -364,7 +364,6 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
         #! ---------------------------------------- ADD BELOW ----------------------------------------
         if is_dp_last_group():
             torch.cuda.synchronize() 
-            print("start decode")
             t2 = time.time()
             #! ---------------------------------------- ADD ABOVE ----------------------------------------
             if not output_type == "latent":
@@ -373,7 +372,7 @@ class xFuserPixArtAlphaPipeline(xFuserPipelineBaseWrapper):
                 )[0]
                 torch.cuda.synchronize() 
                 t3 = time.time()
-                print("execute time ", t3-t2, t2-t1)
+                print("end decode execute time ", t3-t2, t2-t1)
                 if use_resolution_binning:
                     image = self.image_processor.resize_and_crop_tensor(
                         image, orig_width, orig_height
