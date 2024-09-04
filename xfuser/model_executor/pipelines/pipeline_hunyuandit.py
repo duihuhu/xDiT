@@ -464,7 +464,7 @@ class xFuserHunyuanDiTPipeline(xFuserPipelineBaseWrapper):
                 )[0]
                 torch.cuda.synchronize() 
                 t3 = time.time()
-                print("end decode execute time ", t3-t2, t2-t1)
+                print("end decode execute time ", t3-t2, t2-t1, "\n")
                 image, has_nsfw_concept = self.run_safety_checker(
                     image, device, prompt_embeds.dtype
                 )

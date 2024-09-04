@@ -330,7 +330,7 @@ class xFuserCogVideoXPipeline(xFuserPipelineBaseWrapper):
                 video = self.decode_latents(latents)
                 torch.cuda.synchronize() 
                 t3 = time.time()
-                print("end decode execute time ", t3-t2, t2-t1)
+                print("end decode execute time ", t3-t2, t2-t1, "\n")
                 video = self.video_processor.postprocess_video(video=video, output_type=output_type)
             else:
                 video = latents
