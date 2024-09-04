@@ -39,7 +39,7 @@ def main():
     end_time = time.time()
     elapsed_time = end_time - start_time
     torch.cuda.synchronize()
-
+    time.sleep(2)
     start_time = time.time()
     output = pipe(
         height=input_config.height,
