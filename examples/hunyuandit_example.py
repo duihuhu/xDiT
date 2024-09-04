@@ -27,6 +27,7 @@ def main():
 
     torch.cuda.reset_peak_memory_stats()
     start_time = time.time()
+    print(", input_config.prompt",  input_config.prompt)
     output = pipe(
         height=input_config.height,
         width=input_config.height,
@@ -40,7 +41,7 @@ def main():
     elapsed_time = end_time - start_time
     torch.cuda.synchronize()
     time.sleep(2)
-    print("warm up end \n", input_config.prompt)
+    print("warm up end \n")
     start_time = time.time()
     output = pipe(
         height=input_config.height,
