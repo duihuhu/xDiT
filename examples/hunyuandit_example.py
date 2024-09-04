@@ -40,7 +40,7 @@ def main():
     elapsed_time = end_time - start_time
     torch.cuda.synchronize()
     time.sleep(2)
-    print("warm up end \n")
+    print("warm up end \n", input_config.prompt)
     start_time = time.time()
     output = pipe(
         height=input_config.height,
