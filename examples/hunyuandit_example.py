@@ -38,6 +38,18 @@ def main():
     )
     end_time = time.time()
     elapsed_time = end_time - start_time
+    start_time = time.time()
+    output = pipe(
+        height=input_config.height,
+        width=input_config.height,
+        prompt=input_config.prompt,
+        num_inference_steps=input_config.num_inference_steps,
+        output_type=input_config.output_type,
+        use_resolution_binning=input_config.use_resolution_binning,
+        generator=torch.Generator(device="cuda").manual_seed(input_config.seed),
+    )
+    end_time = time.time()
+    elapsed_time = end_time - start_time
     peak_memory = torch.cuda.max_memory_allocated(device=f"cuda:{local_rank}")
 
     parallel_info = (
