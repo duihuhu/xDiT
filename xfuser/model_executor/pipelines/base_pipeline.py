@@ -194,7 +194,7 @@ class xFuserPipelineBaseWrapper(xFuserBaseWrapper, metaclass=ABCMeta):
         self.__call__(
             height=input_config.height,
             width=input_config.width,
-            prompt=prompt,
+            prompt=input_config.prompt,
             use_resolution_binning=input_config.use_resolution_binning,
             num_inference_steps=steps,
             output_type="latent",

@@ -23,11 +23,11 @@ def main():
         engine_config=engine_config,
         torch_dtype=torch.float16,
     ).to(f"cuda:{local_rank}")
+    print("input_config ", input_config.prompt)
     pipe.prepare_run(input_config)
 
     torch.cuda.reset_peak_memory_stats()
     start_time = time.time()
-    print(", input_config.prompt",  input_config.prompt)
     output = pipe(
         height=input_config.height,
         width=input_config.height,
